@@ -22,9 +22,10 @@ export class PokeRecursion {
   recursion(chain: Chain | Chain[], isFirst: boolean): number {
     // multievolution case, like eevee evolutions
     if (Array.isArray(chain)) {
-      let id1 = parseInt(chain[0].species.url.match(idFromUrlRgx)[0]);
+      let id1 = parseInt(chain[0].species.url.match(idFromUrlRgx)?.[0] ?? '');
       for (let i = 0; i < chain.length - 1; i++) {
-        const id2 = parseInt(chain[i + 1].species.url.match(idFromUrlRgx)[0]);
+        const id2 = parseInt(chain[i + 1].species.url.match(idFromUrlRgx)?.[0] ?? '');
+        if (isNaN(id1) || isNaN(id2)) return 0;
         if (id1 + 1 === id2) {
           if (this.pokeName === chain[i].species.name) {
             if (isFirst) return 1;
@@ -34,13 +35,17 @@ export class PokeRecursion {
         } else if (this.pokeName === chain[i].species.name) {
           if (isFirst) return 0;
           return 3;
-        } else {
+        } else if (id1 === null || id2 === null) {
+          return 0;
+        }
+
+        else {
           isFirst = true;
         }
         id1 = id2;
       }
       // checks if it's the last one
-      if (this.pokeName === chain[chain.length - 1].name) return 3;
+      if (this.pokeName === chain[chain.length - 1].species.name) return 3;
       return 0;
     }
     if (chain.evolves_to.length === 0) {
@@ -48,8 +53,9 @@ export class PokeRecursion {
       if (this.pokeName === chain.species.name) return 3;
       return 0;
     }
-    const id1 = parseInt(chain.species.url.match(idFromUrlRgx)[0]);
-    const id2 = parseInt(chain.evolves_to[0].species.url.match(idFromUrlRgx)[0]);
+    const id1 = parseInt(chain.species.url.match(idFromUrlRgx)?.[0] ?? '');
+    const id2 = parseInt(chain.evolves_to[0].species.url.match(idFromUrlRgx)?.[0] ?? '');
+    if (isNaN(id1) || isNaN(id2)) return 0;
     if (id1 + 1 === id2) {
       if (this.pokeName === chain.species.name) {
         if (isFirst) return 1;

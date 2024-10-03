@@ -25,7 +25,7 @@
     if (videoElement.childElementCount > 1) {
       if (!videoElement.paused) {
         try {
-          await videoElement.pause();
+          videoElement.pause();
         } catch (err) {
           console.error("Video not paused", err);
         }
