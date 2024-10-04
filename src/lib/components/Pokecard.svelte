@@ -14,6 +14,7 @@
 
   export let name: string;
   export let url: string;
+  export let pokeSSR: boolean = true;
 
   const pokemonColors: { [index: string]: string } = {
     white: "border-gray-50",
@@ -64,10 +65,27 @@
     const specieData: PokemonSpecieSchema = await fetch(url).then((res) =>
       res.json(),
     );
-    const [pokeFormRes, evoChainRes] = await Promise.all([
-      fetch(`https://pokeapi.co/api/v2/pokemon-form/${specieData.id}`),
-      fetch(specieData.evolution_chain.url),
-    ]);
+    const pokeUrl: string = `https://pokeapi.co/api/v2/pokemon-form/${specieData.id}`;
+    const [pokeFormRes, evoChainRes] = await Promise.all(
+      pokeSSR
+        ? [
+            fetch("/api/catch-em-all", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(pokeUrl),
+            }),
+            fetch("/api/catch-em-all", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify(specieData.evolution_chain.url),
+            }),
+          ]
+        : [fetch(pokeUrl), fetch(specieData.evolution_chain.url)],
+    );
     const [pokeFormData, evoChainData]: [
       PokemonFormSchema,
       EvolutionChainSchema,
@@ -131,7 +149,6 @@
   </a>
 {:else}
   <a
-    on:enterViewport={() => console.log("aFON")}
     href="pokemon/{pokemon.name}"
     class="relative flex-1 pt-2 pb-8 my-3 overflow-hidden text-center border border-solid {pokemonBorder
       .outer[pokemon.evolution_rank]} {pokemonColors[pokemon.color]}"

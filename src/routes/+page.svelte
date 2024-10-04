@@ -8,13 +8,22 @@
   export let data: PageData;
 
   let loading = false;
+  let pokeSSR = true; // Server Side Rendering pokemons
   let pokespeciesList: { name: string; url: string }[] = data.pokespeciesList;
   let nextPokeurl: string = data.nextPokeurl;
 
   async function fetchPokemons() {
     if (loading) return;
     loading = true;
-    const response = await fetch(nextPokeurl);
+    const response = pokeSSR
+      ? await fetch("/api/catch-em-all", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(nextPokeurl),
+        })
+      : await fetch(nextPokeurl);
     const pokedata: PokemonList = await response.json();
     nextPokeurl = pokedata.next;
     pokespeciesList = [...pokespeciesList, ...pokedata.results];
@@ -24,6 +33,7 @@
 
 <svelte:head>
   <title>pokesveltodex</title>
+  <link rel="icon" type="image/x-icon" href={pokeball} />
 </svelte:head>
 
 <Pokelist {pokespeciesList} />

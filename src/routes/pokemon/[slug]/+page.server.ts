@@ -1,11 +1,11 @@
-import type { PageLoad } from './$types';
+import type { PageServerLoad } from './$types';
 import type { PokemonSchema, PokemonSpecieSchema } from '$lib/types';
 
+export const csr = false;
 interface Poke {
   mon: PokemonSchema;
   species: PokemonSpecieSchema;
 }
-
 export const load = (async ({ fetch, params }) => {
   const pokemon: PokemonSchema = await fetch(`https://pokeapi.co/api/v2/pokemon/${params.slug}`).then(res => res.json());
   const pokemonSpecies: PokemonSpecieSchema = await fetch(pokemon.species.url).then(res => res.json());
@@ -14,4 +14,4 @@ export const load = (async ({ fetch, params }) => {
     species: pokemonSpecies,
   }
   return { poke };
-}) satisfies PageLoad;
+}) satisfies PageServerLoad;
