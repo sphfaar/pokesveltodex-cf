@@ -1,6 +1,40 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
+
+@theme {
+	--animate-spin-fast: spin 0.3s linear infinite;
+	--grid-template-columns-pokegrid: repeat(auto-fill, minmax(308px, 1fr));
+
+	--color-normal: #a8a878;
+	--color-fire: #f08030;
+	--color-fighting: #c03028;
+	--color-water: #6890f0;
+	--color-flying: #a890f0;
+	--color-grass: #78c850;
+	--color-poison: #a040a0;
+	--color-electric: #f8d030;
+	--color-ground: #e0c068;
+	--color-psychic: #f85888;
+	--color-rock: #b8a038;
+	--color-ice: #98d8d8;
+	--color-bug: #a8b820;
+	--color-dragon: #7038f8;
+	--color-ghost: #705898;
+	--color-dark: #705848;
+	--color-steel: #b8b8d0;
+	--color-fairy: #ee99ac;
+	--color-unknow: #68a090;
+}
+
+/* Preserve the Tailwind v3 default border color. v4 uses currentColor. */
+@layer base {
+	*,
+	::after,
+	::before,
+	::backdrop,
+	::file-selector-button {
+		border-color: var(--color-gray-200, currentColor);
+	}
+}
 
 :root {
 	color-scheme: light dark;

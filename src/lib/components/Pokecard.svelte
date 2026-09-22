@@ -185,7 +185,7 @@
       class="absolute top-[52%] left-[1.25rem] right-[1.25rem] bottom-[1.25rem] m-auto z-[-10] opacity-10 border {pokemonBorder
         .inner_bottom[pokemon.evolution_rank]} {pokemonColors[pokemon.color]}"
     ></div>
-    <div class="absolute w-full h-full bottom-0 z-[-2] opacity-10 blur-sm">
+    <div class="absolute w-full h-full bottom-0 z-[-2] opacity-10 blur-xs">
       <TypeEffects
         poketype={pokemon.types[pokemon.types.length - 1].type.name}
         pokerank={pokemon.evolution_rank}
