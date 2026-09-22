@@ -1,5 +1,7 @@
 <script lang="ts">
-  export let pkntypes: { slot: number; type: { name: string; url: string } }[];
+  import type { Type } from "$lib/types";
+
+  let { pkntypes }: { pkntypes: Type[] } = $props();
   const typesVariants: { [index: string]: string } = {
     normal: "bg-normal",
     fire: "bg-fire",
@@ -23,7 +25,7 @@
   };
 </script>
 
-{#each pkntypes as pkntype}
+{#each pkntypes as pkntype (pkntype.slot)}
   <div
     class="{typesVariants[
       pkntype.type.name

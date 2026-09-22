@@ -2,7 +2,7 @@
   import type { Result } from "$lib/types";
   import Pokecard from "./Pokecard.svelte";
 
-  export let pokespeciesList: Result[];
+  let { pokespeciesList }: { pokespeciesList: Result[] } = $props();
 </script>
 
 <ul class="grid grid-cols-pokegrid gap-2 p-6">

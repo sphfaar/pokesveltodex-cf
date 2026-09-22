@@ -1,19 +1,21 @@
 <script lang="ts">
-  import type { PageData } from "./$types";
+  import type { PageProps } from "./$types";
   import type { PokemonList } from "$lib/types";
-  import viewport from "$lib/useViewPortAction";
+  import { untrack } from "svelte";
+  import { viewport } from "$lib/viewport";
   import Pokelist from "$lib/components/Pokelist.svelte";
   import pokeball from "$lib/images/pokeball.svg";
 
-  export let data: PageData;
+  let { data }: PageProps = $props();
 
-  let loading = false;
-  let pokeSSR = true; // Server Side Rendering pokemons
-  let pokespeciesList: { name: string; url: string }[] = data.pokespeciesList;
-  let nextPokeurl: string = data.nextPokeurl;
+  let loading = $state(false);
+  const pokeSSR = true; // Server Side Rendering pokemons
+  // Seed local list state from the first page load, then append as the user scrolls.
+  let pokespeciesList = $state.raw(untrack(() => data.pokespeciesList));
+  let nextPokeurl = $state(untrack(() => data.nextPokeurl));
 
   async function fetchPokemons() {
-    if (loading) return;
+    if (loading || !nextPokeurl) return;
     loading = true;
     const response = pokeSSR
       ? await fetch("/api/catch-em-all", {
@@ -48,7 +50,7 @@
       alt=""
     />
   {:else}
-    <p class="text-center" use:viewport on:enterViewport={fetchPokemons}>
+    <p class="text-center" {@attach viewport({ onenterViewport: fetchPokemons })}>
       Scroll for more pokemons
     </p>
   {/if}

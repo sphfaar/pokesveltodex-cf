@@ -1,4 +1,4 @@
-// See https://kit.svelte.dev/docs/types#app
+// See https://svelte.dev/docs/kit/types#app.d.ts
 // for information about these interfaces
 declare global {
   namespace App {
@@ -6,12 +6,6 @@ declare global {
       env: Env
       cf: CfProperties
       ctx: ExecutionContext
-    }
-  }
-  namespace svelteHTML {
-    interface HTMLAttributes {
-      'on:enterViewport'?: (event: CustomEvent) => void;
-      'on:exitViewport'?: (event: CustomEvent) => void;
     }
   }
 }

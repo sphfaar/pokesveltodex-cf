@@ -1,18 +1,16 @@
 <script lang="ts">
   import { pokeVfxs } from "$lib/types_videos";
   import { onMount } from "svelte";
+  import { viewport } from "$lib/viewport";
 
-  import viewport from "$lib/useViewPortAction";
+  let { poketype, pokerank }: { poketype: string; pokerank: number } = $props();
 
-  export let poketype: string;
-  export let pokerank: number;
-
-  async function handlePlay(e: Event) {
-    const videoElement = e.target as HTMLVideoElement;
-    if (videoElement.childElementCount > 1) {
-      if (videoElement.paused) {
+  async function handlePlay(element: HTMLElement) {
+    if (!(element instanceof HTMLVideoElement)) return;
+    if (element.childElementCount > 1) {
+      if (element.paused) {
         try {
-          await videoElement.play();
+          await element.play();
         } catch (err) {
           console.error("Video not played (know error)", err);
         }
@@ -20,12 +18,12 @@
     }
   }
 
-  async function handlePause(e: Event) {
-    const videoElement = e.target as HTMLVideoElement;
-    if (videoElement.childElementCount > 1) {
-      if (!videoElement.paused) {
+  async function handlePause(element: HTMLElement) {
+    if (!(element instanceof HTMLVideoElement)) return;
+    if (element.childElementCount > 1) {
+      if (!element.paused) {
         try {
-          videoElement.pause();
+          element.pause();
         } catch (err) {
           console.error("Video not paused", err);
         }
@@ -33,7 +31,7 @@
     }
   }
 
-  let pokeVfxSrc: string = "";
+  let pokeVfxSrc = $state("");
 
   function handleSrcVfx(vfx: string) {
     const pokeVfxKeys: string[] = [];
@@ -56,9 +54,10 @@
 
 {#if pokeVfxSrc}
   <video
-    use:viewport
-    on:enterViewport={handlePlay}
-    on:exitViewport={handlePause}
+    {@attach viewport({
+      onenterViewport: handlePlay,
+      onexitViewport: handlePause,
+    })}
     loop={true}
     muted={true}
     preload="none"

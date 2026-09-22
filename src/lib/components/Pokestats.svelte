@@ -1,10 +1,11 @@
 <script lang="ts">
   import type { Stat } from "$lib/types";
-  export let stats: Stat[];
+
+  let { stats }: { stats: Stat[] } = $props();
 </script>
 
 <ul>
-  {#each stats as stat}
+  {#each stats as stat (stat.stat.name)}
     <li class="flex flex-row items-center capitalize pb-2">
       <p class="w-36 flex-none inline-block">{stat.stat.name}</p>
       <p class="w-10 flex-none inline-block">{stat.base_stat}</p>

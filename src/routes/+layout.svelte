@@ -1,9 +1,13 @@
 <script lang="ts">
   import "../app.css";
+  import type { LayoutProps } from "./$types";
+  import { resolve } from "$app/paths";
+
+  let { children }: LayoutProps = $props();
 </script>
 
 <header class="pt-8">
-  <a href="/">
+  <a href={resolve("/")}>
     <pre class="text-[0.3em] text-green-300 text-center">
       ██████╗  ██████╗ ██╗  ██╗███████╗███████╗██╗   ██╗███████╗██╗  ████████╗ ██████╗ ██████╗ ███████╗██╗  ██╗
       ██╔══██╗██╔═══██╗██║ ██╔╝██╔════╝██╔════╝██║   ██║██╔════╝██║  ╚══██╔══╝██╔═══██╗██╔══██╗██╔════╝╚██╗██╔╝
@@ -15,5 +19,5 @@
   </a>
 </header>
 <main class="container mx-auto">
-  <slot />
+  {@render children()}
 </main>

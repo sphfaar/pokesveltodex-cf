@@ -6,15 +6,18 @@
     Type,
   } from "$lib/types";
   import { onMount } from "svelte";
+  import { resolve } from "$app/paths";
   import Poketypes from "$lib/components/Poketypes.svelte";
   import TypeEffects from "$lib/components/TypeEffects.svelte";
   import { PokeRecursion } from "$lib/pokeRecursion";
   import missingNo from "$lib/images/missingno.webp";
   import pokeball from "$lib/images/pokeball.svg";
 
-  export let name: string;
-  export let url: string;
-  export let pokeSSR: boolean = true;
+  let {
+    name,
+    url,
+    pokeSSR = true,
+  }: { name: string; url: string; pokeSSR?: boolean } = $props();
 
   const pokemonColors: { [index: string]: string } = {
     white: "border-gray-50",
@@ -49,19 +52,16 @@
     ],
   };
 
-  let pokemon: {
+  let pokemon = $state<{
     name: string;
     id: number;
     color: string;
     sprite: string;
     types: Type[];
     evolution_rank: number; // 0 = no evolutions / evolutions not aligned with IDs, 1 = first, 2 = middle, 3 = last
-  };
-
-  let loading = true;
+  }>();
 
   async function fetchPokecardData(name: string, url: string) {
-    loading = true;
     const specieData: PokemonSpecieSchema = await fetch(url).then((res) =>
       res.json(),
     );
@@ -105,17 +105,16 @@
       types: pokeFormData.types,
       evolution_rank: pokeEvolutionRank,
     };
-    loading = false;
   }
 
   onMount(() => fetchPokecardData(name, url));
 </script>
 
-{#if loading}
+{#if !pokemon}
   <a
     class="relative flex-1 pt-8 pb-12 my-3 overflow-hidden text-center border border-solid {pokemonBorder
       .outer[2]} {pokemonColors[0]}"
-    href="pokemon/{name}"
+    href={resolve("/pokemon/[slug]", { slug: name })}
   >
     <p class="font-thin text-gray-400 italic capitalize">{name}</p>
     <img
@@ -129,27 +128,27 @@
     <div
       class="absolute top-[1.25rem] left-[1.25rem] right-[1.25rem] bottom-[52%] m-auto z-[-3] opacity-10 border {pokemonBorder
         .inner_top[2]} {pokemonColors[0]}"
-    />
+    ></div>
     <div
       class="absolute top-[52%] left-20 right-20 bottom-20 m-auto z-[-3] opacity-10 border {pokemonBorder
         .inner_bottom[2]} {pokemonColors[0]}"
-    />
+    ></div>
     <div
       class="absolute top-[52%] left-[3.75rem] right-[3.75rem] bottom-[3.75rem] m-auto z-[-3] opacity-10 border {pokemonBorder
         .inner_bottom[2]} {pokemonColors[0]}"
-    />
+    ></div>
     <div
       class="absolute top-[52%] left-10 right-10 bottom-10 m-auto z-[-3] opacity-10 border {pokemonBorder
         .inner_bottom[2]} {pokemonColors[0]}"
-    />
+    ></div>
     <div
       class="absolute top-[52%] left-[1.25rem] right-[1.25rem] bottom-[1.25rem] m-auto z-[-10] opacity-10 border {pokemonBorder
         .inner_bottom[2]} {pokemonColors[0]}"
-    />
+    ></div>
   </a>
 {:else}
   <a
-    href="pokemon/{pokemon.name}"
+    href={resolve("/pokemon/[slug]", { slug: pokemon.name })}
     class="relative flex-1 pt-2 pb-8 my-3 overflow-hidden text-center border border-solid {pokemonBorder
       .outer[pokemon.evolution_rank]} {pokemonColors[pokemon.color]}"
   >
@@ -169,23 +168,23 @@
     <div
       class="absolute top-[1.25rem] left-[1.25rem] right-[1.25rem] bottom-[52%] m-auto z-[-3] opacity-10 border {pokemonBorder
         .inner_top[pokemon.evolution_rank]} {pokemonColors[pokemon.color]}"
-    />
+    ></div>
     <div
       class="absolute top-[52%] left-20 right-20 bottom-20 m-auto z-[-3] opacity-10 border {pokemonBorder
         .inner_bottom[pokemon.evolution_rank]} {pokemonColors[pokemon.color]}"
-    />
+    ></div>
     <div
       class="absolute top-[52%] left-[3.75rem] right-[3.75rem] bottom-[3.75rem] m-auto z-[-3] opacity-10 border {pokemonBorder
         .inner_bottom[pokemon.evolution_rank]} {pokemonColors[pokemon.color]}"
-    />
+    ></div>
     <div
       class="absolute top-[52%] left-10 right-10 bottom-10 m-auto z-[-3] opacity-10 border {pokemonBorder
         .inner_bottom[pokemon.evolution_rank]} {pokemonColors[pokemon.color]}"
-    />
+    ></div>
     <div
       class="absolute top-[52%] left-[1.25rem] right-[1.25rem] bottom-[1.25rem] m-auto z-[-10] opacity-10 border {pokemonBorder
         .inner_bottom[pokemon.evolution_rank]} {pokemonColors[pokemon.color]}"
-    />
+    ></div>
     <div class="absolute w-full h-full bottom-0 z-[-2] opacity-10 blur-sm">
       <TypeEffects
         poketype={pokemon.types[pokemon.types.length - 1].type.name}

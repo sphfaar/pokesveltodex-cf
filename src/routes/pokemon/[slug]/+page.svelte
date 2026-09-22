@@ -1,18 +1,18 @@
 <script lang="ts">
-  import type { PageData } from "./$types";
+  import type { PageProps } from "./$types";
   import Poketypes from "$lib/components/Poketypes.svelte";
   import Pokestats from "$lib/components/Pokestats.svelte";
   import missingNo from "$lib/images/missingno.webp";
   import pokeball from "$lib/images/pokeball.svg";
 
-  export let data: PageData;
+  let { data }: PageProps = $props();
 
-  function getFlavorText() {
+  let flavorText = $derived.by(() => {
     for (let i = 0; i < data.poke.species.flavor_text_entries.length; i++) {
       if (data.poke.species.flavor_text_entries[i].language.name === "en")
         return data.poke.species.flavor_text_entries[i].flavor_text;
     }
-  }
+  });
 </script>
 
 <svelte:head>
@@ -55,7 +55,7 @@
     />
   {/if}
   {#if data.poke.species.flavor_text_entries}
-    <p class="my-4">{getFlavorText()}</p>
+    <p class="my-4">{flavorText}</p>
     <div>
       <h3 class="mt-8 mb-4 text-xl font-bold">Base stats</h3>
       <Pokestats stats={data.poke.mon.stats} />
