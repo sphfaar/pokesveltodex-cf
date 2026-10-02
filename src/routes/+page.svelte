@@ -2,7 +2,10 @@
   import type { PageProps } from "./$types";
   import type { PokemonList } from "#lib/types.js";
   import { untrack } from "svelte";
+  import { afterNavigate, beforeNavigate } from "$app/navigation";
+  import { navigating } from "$app/state";
   import { viewport } from "#lib/viewport.js";
+  import { carryDex, recallDex } from "#lib/pokeDexCarry.js";
   import Pokelist from "#lib/components/Pokelist.svelte";
   import pokeball from "#lib/images/pokeball.svg";
 
@@ -10,9 +13,37 @@
 
   let loading = $state(false);
   const pokeSSR = true; // Server Side Rendering pokemons
-  // Seed local list state from the first page load, then append as the user scrolls.
-  let pokespeciesList = $state.raw(untrack(() => data.pokespeciesList));
-  let nextPokeurl = $state(untrack(() => data.nextPokeurl));
+  // History scroll is applied against the first client render. That render has
+  // to already include every page loaded before the detail view, or the offset
+  // clamps to the end of the server page.
+  const carried = untrack(() => recallDex());
+  const restoreScrollY = untrack(() =>
+    navigating.type === "popstate" ? (carried?.scrollY ?? 0) : 0,
+  );
+  let pokespeciesList = $state.raw(
+    carried?.pokespeciesList ?? untrack(() => data.pokespeciesList),
+  );
+  let nextPokeurl = $state(
+    carried ? carried.nextPokeurl : untrack(() => data.nextPokeurl),
+  );
+
+  beforeNavigate(() => {
+    carryDex({
+      pokespeciesList,
+      nextPokeurl,
+      scrollY: window.scrollY,
+    });
+  });
+
+  afterNavigate((nav) => {
+    if (nav.type !== "popstate" || restoreScrollY <= 0) return;
+    const y = restoreScrollY;
+    const apply = () => {
+      if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
+    };
+    apply();
+    requestAnimationFrame(apply);
+  });
 
   let sentinelEl: HTMLElement | undefined;
 
@@ -78,7 +109,7 @@
 </svelte:head>
 
 <div class="[overflow-anchor:none]">
-  <Pokelist {pokespeciesList} />
+  <Pokelist {pokespeciesList} {restoreScrollY} />
 
   {#if nextPokeurl}
     <div class="pb-8">

@@ -10,7 +10,10 @@
     indexRange,
   } from "#lib/pokeWindow.js";
 
-  let { pokespeciesList }: { pokespeciesList: Result[] } = $props();
+  let {
+    pokespeciesList,
+    restoreScrollY = 0,
+  }: { pokespeciesList: Result[]; restoreScrollY?: number } = $props();
 
   let measured = $state(false);
   let scrollY = $state(0);
@@ -59,6 +62,9 @@
     let seenScroll = Number.NaN;
     let seenView = Number.NaN;
     let seenMeasured = false;
+    // History scroll lands after this attachment. Hold the saved offset so the
+    // warm band mounts the row the user left, until the viewport arrives there.
+    let pendingRestore = restoreScrollY > 0;
 
     const read = () => {
       frame = 0;
@@ -73,6 +79,9 @@
       const nextTop = element.getBoundingClientRect().top + window.scrollY;
       const nextScroll = window.scrollY;
       const nextView = window.innerHeight;
+      if (pendingRestore && Math.abs(nextScroll - restoreScrollY) <= 2) {
+        pendingRestore = false;
+      }
 
       if (seenGapX !== nextGapX) {
         seenGapX = nextGapX;
@@ -98,9 +107,10 @@
         seenTop = nextTop;
         listTop = nextTop;
       }
-      if (seenScroll !== nextScroll) {
-        seenScroll = nextScroll;
-        scrollY = nextScroll;
+      const followedScroll = pendingRestore ? restoreScrollY : nextScroll;
+      if (seenScroll !== followedScroll) {
+        seenScroll = followedScroll;
+        scrollY = followedScroll;
       }
       if (seenView !== nextView) {
         seenView = nextView;
@@ -117,15 +127,28 @@
       frame = requestAnimationFrame(read);
     };
 
+    const onScroll = () => {
+      // Ignore a leftover 0 from the detail page. A real move that is not the
+      // saved offset means the user scrolled, so follow the viewport again.
+      if (
+        pendingRestore &&
+        window.scrollY > 1 &&
+        Math.abs(window.scrollY - restoreScrollY) > 2
+      ) {
+        pendingRestore = false;
+      }
+      schedule();
+    };
+
     read();
     const resize = new ResizeObserver(schedule);
     resize.observe(element);
-    window.addEventListener("scroll", schedule, { passive: true });
+    window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("resize", schedule);
     return () => {
       if (frame) cancelAnimationFrame(frame);
       resize.disconnect();
-      window.removeEventListener("scroll", schedule);
+      window.removeEventListener("scroll", onScroll);
       window.removeEventListener("resize", schedule);
     };
   }
