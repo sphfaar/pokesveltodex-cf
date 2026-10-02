@@ -1,9 +1,9 @@
 <script lang="ts">
   import type { PageProps } from "./$types";
-  import Poketypes from "$lib/components/Poketypes.svelte";
-  import Pokestats from "$lib/components/Pokestats.svelte";
-  import missingNo from "$lib/images/missingno.webp";
-  import pokeball from "$lib/images/pokeball.svg";
+  import Poketypes from "#lib/components/Poketypes.svelte";
+  import Pokestats from "#lib/components/Pokestats.svelte";
+  import missingNo from "#lib/images/missingno.webp";
+  import pokeball from "#lib/images/pokeball.svg";
 
   let { data }: PageProps = $props();
 

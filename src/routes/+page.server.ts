@@ -1,5 +1,5 @@
 import type { PageServerLoad } from "./$types"
-import type { PokemonList } from "$lib/types";
+import type { PokemonList } from "#lib/types.js";
 
 export const load = (async ({ fetch }) => {
   const response = await fetch("https://pokeapi.co/api/v2/pokemon-species?limit=50&offset=0");

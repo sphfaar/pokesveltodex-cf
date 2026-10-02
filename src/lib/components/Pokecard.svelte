@@ -1,17 +1,15 @@
 <script lang="ts">
-  import type {
-    PokemonSpecieSchema,
-    PokemonFormSchema,
-    EvolutionChainSchema,
-    Type,
-  } from "$lib/types";
   import { onMount } from "svelte";
   import { resolve } from "$app/paths";
-  import Poketypes from "$lib/components/Poketypes.svelte";
-  import TypeEffects from "$lib/components/TypeEffects.svelte";
-  import { PokeRecursion } from "$lib/pokeRecursion";
-  import missingNo from "$lib/images/missingno.webp";
-  import pokeball from "$lib/images/pokeball.svg";
+  import Poketypes from "#lib/components/Poketypes.svelte";
+  import TypeEffects from "#lib/components/TypeEffects.svelte";
+  import missingNo from "#lib/images/missingno.webp";
+  import pokeball from "#lib/images/pokeball.svg";
+  import {
+    loadPokecard,
+    peekPokecard,
+    type PokecardView,
+  } from "#lib/pokecardData.js";
 
   let {
     name,
@@ -52,67 +50,38 @@
     ],
   };
 
-  let pokemon = $state<{
-    name: string;
-    id: number;
-    color: string;
-    sprite: string;
-    types: Type[];
-    evolution_rank: number; // 0 = no evolutions / evolutions not aligned with IDs, 1 = first, 2 = middle, 3 = last
-  }>();
+  // Fetched view, kept apart from the prop so a warm-band remount can read the cache.
+  let fetched = $state<{ url: string; view: PokecardView } | undefined>();
+  let pokemon = $derived(fetched?.url === url ? fetched.view : peekPokecard(url));
 
-  async function fetchPokecardData(name: string, url: string) {
-    const specieData: PokemonSpecieSchema = await fetch(url).then((res) =>
-      res.json(),
+  // The card mounts only inside the warm band, so this fetch starts on entry.
+  onMount(() => {
+    let alive = true;
+    const currentUrl = url;
+    const currentName = name;
+    const ssr = pokeSSR;
+    if (peekPokecard(currentUrl)) return;
+    const { promise, cancel } = loadPokecard(currentName, currentUrl, ssr);
+    promise.then(
+      (view) => {
+        if (alive) fetched = { url: currentUrl, view };
+      },
+      (err: unknown) => {
+        if (!alive) return;
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        console.error("Pokecard fetch failed", err);
+      },
     );
-    const pokeUrl: string = `https://pokeapi.co/api/v2/pokemon-form/${specieData.id}`;
-    const [pokeFormRes, evoChainRes] = await Promise.all(
-      pokeSSR
-        ? [
-            fetch("/api/catch-em-all", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(pokeUrl),
-            }),
-            fetch("/api/catch-em-all", {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-              },
-              body: JSON.stringify(specieData.evolution_chain.url),
-            }),
-          ]
-        : [fetch(pokeUrl), fetch(specieData.evolution_chain.url)],
-    );
-    const [pokeFormData, evoChainData]: [
-      PokemonFormSchema,
-      EvolutionChainSchema,
-    ] = [await pokeFormRes.json(), await evoChainRes.json()];
-    const isFirst: boolean = specieData.evolves_from_species ? false : true;
-    const pokeEvolutionRank: number = new PokeRecursion(
-      name,
-      evoChainData.chain,
-      isFirst,
-    ).evoRank;
-
-    pokemon = {
-      name,
-      id: specieData.id,
-      color: specieData.color.name,
-      sprite: pokeFormData.sprites.front_default,
-      types: pokeFormData.types,
-      evolution_rank: pokeEvolutionRank,
+    return () => {
+      alive = false;
+      cancel();
     };
-  }
-
-  onMount(() => fetchPokecardData(name, url));
+  });
 </script>
 
 {#if !pokemon}
   <a
-    class="relative flex-1 pt-8 pb-12 my-3 overflow-hidden text-center border border-solid {pokemonBorder
+    class="relative block h-full pt-8 pb-12 overflow-hidden text-center border border-solid {pokemonBorder
       .outer[2]} {pokemonColors[0]}"
     href={resolve("/pokemon/[slug]", { slug: name })}
   >
@@ -149,7 +118,7 @@
 {:else}
   <a
     href={resolve("/pokemon/[slug]", { slug: pokemon.name })}
-    class="relative flex-1 pt-2 pb-8 my-3 overflow-hidden text-center border border-solid {pokemonBorder
+    class="relative block h-full pt-2 pb-8 overflow-hidden text-center border border-solid {pokemonBorder
       .outer[pokemon.evolution_rank]} {pokemonColors[pokemon.color]}"
   >
     <p class="text-gray-500"><span class="text-sm">#</span>{pokemon.id}</p>
@@ -189,6 +158,7 @@
       <TypeEffects
         poketype={pokemon.types[pokemon.types.length - 1].type.name}
         pokerank={pokemon.evolution_rank}
+        clipKey={pokemon.name}
       />
     </div>
   </a>

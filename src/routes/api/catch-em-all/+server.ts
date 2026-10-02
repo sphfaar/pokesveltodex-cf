@@ -1,5 +1,4 @@
 import type { RequestHandler } from "./$types";
-import { json } from "@sveltejs/kit";
 import { error } from "@sveltejs/kit";
 
 export const POST: RequestHandler = async ({ request, setHeaders }) => {
@@ -20,5 +19,5 @@ export const POST: RequestHandler = async ({ request, setHeaders }) => {
     "cache-control": "public, max-age=3600",
   })
 
-  return json(data);
+  return Response.json(data);
 }

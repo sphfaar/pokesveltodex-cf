@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Stat } from "$lib/types";
+  import type { Stat } from "#lib/types.js";
 
   let { stats }: { stats: Stat[] } = $props();
 </script>

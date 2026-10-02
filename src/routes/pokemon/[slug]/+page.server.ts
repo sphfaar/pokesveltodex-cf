@@ -1,5 +1,5 @@
 import type { PageServerLoad } from './$types';
-import type { PokemonSchema, PokemonSpecieSchema } from '$lib/types';
+import type { PokemonSchema, PokemonSpecieSchema } from '#lib/types.js';
 
 export const csr = false;
 interface Poke {

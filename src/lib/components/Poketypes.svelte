@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { Type } from "$lib/types";
+  import type { Type } from "#lib/types.js";
 
   let { pkntypes }: { pkntypes: Type[] } = $props();
   const typesVariants: { [index: string]: string } = {
