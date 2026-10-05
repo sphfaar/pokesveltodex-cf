@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { ChevronsDownUp, ChevronsUpDown } from "@lucide/svelte";
+	import { SvelteSet } from "svelte/reactivity";
 	import TcgCard from "#lib/components/TcgCard.svelte";
 	import { expansionLogo } from "#lib/tcg/logos.js";
 	import type { TcgCard as Card, TcgExpansion, TcgPrints, TcgRegion } from "#lib/tcg/types.js";
@@ -14,6 +16,7 @@
 	let region = $state<TcgRegion>("en");
 	let active = $state<{ card: Card; expansion: string } | null>(null);
 	const pointerBus: { aim: (event: PointerEvent) => void } = { aim: () => {} };
+	const collapsed = new SvelteSet<string>();
 
 	function focusClose(node: HTMLButtonElement) {
 		node.focus();
@@ -45,6 +48,11 @@
 		const released = releaseLabel(expansion.releaseDate);
 		const count = countLabel(expansion.cards.length);
 		return released ? `${released} · ${count}` : count;
+	}
+
+	function toggleSection(id: string) {
+		if (collapsed.has(id)) collapsed.delete(id);
+		else collapsed.add(id);
 	}
 
 	function open(card: Card, expansion: string) {
@@ -95,7 +103,9 @@
 	{:else}
 		{#each sections as expansion (expansion.id)}
 			{@const logo = expansionLogo(expansion.logoId)}
-			<article class="expansion">
+			{@const sectionKey = `${region}:${expansion.id}`}
+			{@const shrunk = collapsed.has(sectionKey)}
+			<article class={["expansion", shrunk && "is-shrunk"]}>
 				<header class="head">
 					{#if logo}
 						<img class="logo" src={logo} alt="" width="140" height="48" />
@@ -104,14 +114,29 @@
 						<h4 class="title">{expansion.name}</h4>
 						<p class="meta">{metaLine(expansion)}</p>
 					</div>
+					<button
+						type="button"
+						class="shrink"
+						aria-expanded={!shrunk}
+						aria-label={`${shrunk ? "Expand" : "Collapse"} ${expansion.name}`}
+						onclick={() => toggleSection(sectionKey)}
+					>
+						{#if shrunk}
+							<ChevronsUpDown size={22} aria-hidden="true" />
+						{:else}
+							<ChevronsDownUp size={22} aria-hidden="true" />
+						{/if}
+					</button>
 				</header>
-				<ul class="grid">
-					{#each expansion.cards as card (card.id)}
-						<li>
-							<TcgCard {card} onopen={() => open(card, expansion.name)} />
-						</li>
-					{/each}
-				</ul>
+				{#if !shrunk}
+					<ul class="grid">
+						{#each expansion.cards as card (card.id)}
+							<li>
+								<TcgCard {card} onopen={() => open(card, expansion.name)} />
+							</li>
+						{/each}
+					</ul>
+				{/if}
 			</article>
 		{/each}
 	{/if}
@@ -184,9 +209,36 @@
 
 	.head {
 		display: flex;
-		align-items: center;
+		align-items: flex-start;
 		gap: 1rem;
 		margin-bottom: 1rem;
+	}
+
+	.is-shrunk .head {
+		margin-bottom: 0;
+	}
+
+	.shrink {
+		margin-left: auto;
+		flex: none;
+		display: grid;
+		place-items: center;
+		border: 0;
+		border-radius: 0.4rem;
+		background: transparent;
+		color: rgb(255 255 255 / 78%);
+		padding: 0.2rem;
+		cursor: pointer;
+	}
+
+	.shrink:hover {
+		background: rgb(255 255 255 / 8%);
+		color: white;
+	}
+
+	.shrink:focus-visible {
+		outline: 2px solid #86efac;
+		outline-offset: 2px;
 	}
 
 	.logo {
