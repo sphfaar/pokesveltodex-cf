@@ -2,6 +2,7 @@
   import type { PageProps } from "./$types";
   import Poketypes from "#lib/components/Poketypes.svelte";
   import Pokestats from "#lib/components/Pokestats.svelte";
+  import TcgPrints from "#lib/components/TcgPrints.svelte";
   import missingNo from "#lib/images/missingno.webp";
   import pokeball from "#lib/images/pokeball.svg";
 
@@ -63,4 +64,11 @@
   {:else}
     <p>Loading stats...</p>
   {/if}
+  {#await data.tcg}
+    <p class="my-8 text-gray-400">Loading cards…</p>
+  {:then prints}
+    <TcgPrints {prints} />
+  {:catch}
+    <p class="my-8 text-gray-400">Cards could not be loaded.</p>
+  {/await}
 </div>
