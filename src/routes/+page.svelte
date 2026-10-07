@@ -6,6 +6,7 @@
   import { navigating } from "$app/state";
   import { viewport } from "#lib/viewport.js";
   import { carryDex, recallDex } from "#lib/pokeDexCarry.js";
+  import { getGenerationFilter } from "#lib/generationFilter.svelte.js";
   import Pokelist from "#lib/components/Pokelist.svelte";
   import pokeball from "#lib/images/pokeball.svg";
 
@@ -17,14 +18,30 @@
   // to already include every page loaded before the detail view, or the offset
   // clamps to the end of the server page.
   const carried = untrack(() => recallDex());
-  const restoreScrollY = untrack(() =>
-    navigating.type === "popstate" ? (carried?.scrollY ?? 0) : 0,
-  );
+  const filter = getGenerationFilter();
+  // The layout keeps the checkboxes. This page only pins the warm band for a
+  // Back navigation; a fresh visit, including the header logo, starts at the top.
+  untrack(() => {
+    filter.pinnedScroll =
+      navigating.type === "popstate" ? (carried?.scrollY ?? 0) : 0;
+  });
   let pokespeciesList = $state.raw(
     carried?.pokespeciesList ?? untrack(() => data.pokespeciesList),
   );
   let nextPokeurl = $state(
     carried ? carried.nextPokeurl : untrack(() => data.nextPokeurl),
+  );
+
+  // Every box checked and an empty search keeps the paged national list.
+  // A narrower check, or any search text, replaces it with the full matching
+  // species list in national-dex order.
+  let allSelected = $derived(filter.allSelected);
+  let searching = $derived(filter.query.trim().length > 0);
+  let narrowed = $derived(searching || !allSelected);
+  let filteredList = $derived(filter.filteredList());
+  let shownList = $derived(filteredList ?? pokespeciesList);
+  let waitingForGenerations = $derived(
+    narrowed && filteredList === null && !filter.error,
   );
 
   beforeNavigate(() => {
@@ -36,8 +53,8 @@
   });
 
   afterNavigate((nav) => {
-    if (nav.type !== "popstate" || restoreScrollY <= 0) return;
-    const y = restoreScrollY;
+    if (nav.type !== "popstate" || filter.pinnedScroll <= 0) return;
+    const y = filter.pinnedScroll;
     const apply = () => {
       if (Math.abs(window.scrollY - y) > 1) window.scrollTo(0, y);
     };
@@ -109,22 +126,36 @@
 </svelte:head>
 
 <div class="[overflow-anchor:none]">
-  <Pokelist {pokespeciesList} {restoreScrollY} />
-
-  {#if nextPokeurl}
-    <div class="pb-8">
-      {#if loading}
-        <img
-          width="16"
-          height="16"
-          class="text-center animate-spin-fast w-16 h-16 fit-contain m-auto"
-          src={pokeball}
-          alt=""
-        />
-      {/if}
-      <p class="text-center" {@attach loadAhead}>Scroll for more pokemons</p>
-    </div>
+  {#if waitingForGenerations}
+    <img
+      width="16"
+      height="16"
+      class="text-center animate-spin-fast w-16 h-16 fit-contain m-auto"
+      src={pokeball}
+      alt=""
+    />
+  {:else if narrowed && filter.error}
+    <p class="text-center">Generations could not be loaded.</p>
   {:else}
-    <p class="text-center">No more pokemons</p>
+    <Pokelist pokespeciesList={shownList} restoreScrollY={filter.pinnedScroll} />
+
+    {#if !narrowed && nextPokeurl}
+      <div class="pb-8">
+        {#if loading}
+          <img
+            width="16"
+            height="16"
+            class="text-center animate-spin-fast w-16 h-16 fit-contain m-auto"
+            src={pokeball}
+            alt=""
+          />
+        {/if}
+        <p class="text-center" {@attach loadAhead}>Scroll for more pokemons</p>
+      </div>
+    {:else if !narrowed}
+      <p class="text-center">No more pokemons</p>
+    {:else if shownList.length === 0}
+      <p class="text-center">No pokemons</p>
+    {/if}
   {/if}
 </div>
