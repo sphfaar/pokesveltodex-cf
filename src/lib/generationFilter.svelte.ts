@@ -6,11 +6,12 @@ import {
   speciesId,
   type GenerationRef,
 } from "#lib/generations.js";
+import { REGION_IDS, regionIdFor } from "#lib/regions.js";
 import type { Result } from "#lib/types.js";
 
 /**
- * Generation checkboxes for the home dex. The layout owns one instance so a
- * trip to a Pokémon page and back keeps the same checks.
+ * Home dex filters. The layout owns one instance so a trip to a Pokémon page
+ * and back keeps the same checks, search, and which region cards are open.
  */
 export class GenerationFilter {
   generations = $state.raw<GenerationRef[]>([]);
@@ -20,6 +21,8 @@ export class GenerationFilter {
   pinnedScroll = $state(0);
   query = $state("");
   readonly selected = new SvelteSet<number>();
+  readonly selectedRegions = new SvelteSet<string>(REGION_IDS);
+  readonly expandedRegions = new SvelteSet<string>();
 
   /** Select every generation the first time they arrive. Later visits keep the checks. */
   adopt(generations: GenerationRef[]) {
@@ -41,15 +44,36 @@ export class GenerationFilter {
     );
   }
 
+  get allRegionsSelected(): boolean {
+    return REGION_IDS.every((id) => this.selectedRegions.has(id));
+  }
+
   /**
-   * Species in the checked generations, in national-dex order, narrowed by the
-   * search box. `null` while that set is still loading, or when every
-   * generation is checked and the box is empty — then the paged national list
-   * stays in charge.
+   * True when an unchecked region would hide species. Lumiose City introduced
+   * none, and the unnamed region has none until generation 10 is in the data.
+   */
+  get regionsNarrowed(): boolean {
+    if (this.allRegionsSelected) return false;
+    for (const generation of this.generations) {
+      if (generation.id === 8) {
+        if (!this.selectedRegions.has("galar") || !this.selectedRegions.has("hisui")) return true;
+        continue;
+      }
+      if (!this.selectedRegions.has(regionIdFor(0, generation.id))) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Species in the checked generations and regions, in national-dex order,
+   * narrowed by the search box. `null` while that set is still loading, or
+   * when every generation is checked, no region is hiding species, and the
+   * box is empty — then the paged national list stays in charge.
    */
   filteredList(): Result[] | null {
     const needle = normalizeQuery(this.query);
-    if (!needle && this.allSelected) return null;
+    if (!needle && this.allSelected && !this.regionsNarrowed) return null;
+    if (this.selectedRegions.size === 0) return [];
     const base = this.speciesInSelection();
     if (base === null) return null;
     if (!needle) return base;
@@ -59,18 +83,37 @@ export class GenerationFilter {
   setQuery(value: string) {
     if (this.query === value) return;
     this.query = value;
-    if (typeof window !== "undefined" && window.scrollY !== 0) window.scrollTo(0, 0);
-    this.pinnedScroll = 0;
+    this.pinToTop();
     if (value.trim()) void this.prefetch();
   }
 
   toggle(id: number) {
     if (this.selected.has(id)) this.selected.delete(id);
     else this.selected.add(id);
-    if (typeof window !== "undefined" && window.scrollY !== 0) window.scrollTo(0, 0);
-    this.pinnedScroll = 0;
+    this.pinToTop();
     this.error = false;
     if (!this.allSelected) void this.ensure([...this.selected]);
+  }
+
+  toggleRegion(id: string) {
+    const narrowed = this.regionsNarrowed;
+    if (this.selectedRegions.has(id)) this.selectedRegions.delete(id);
+    else this.selectedRegions.add(id);
+    this.error = false;
+    if (narrowed || this.regionsNarrowed) {
+      this.pinToTop();
+      if (this.regionsNarrowed) void this.prefetch();
+    }
+  }
+
+  toggleExpanded(id: string) {
+    if (this.expandedRegions.has(id)) this.expandedRegions.delete(id);
+    else this.expandedRegions.add(id);
+  }
+
+  private pinToTop() {
+    if (typeof window !== "undefined" && window.scrollY !== 0) window.scrollTo(0, 0);
+    this.pinnedScroll = 0;
   }
 
   prefetch() {
@@ -95,8 +138,12 @@ export class GenerationFilter {
     }
   }
 
-  /** Checked generations, or `null` when one of them has not loaded yet. */
+  /**
+   * Checked generations, dropping species from an unchecked region.
+   * `null` when one of those generations has not loaded yet.
+   */
   private speciesInSelection(): Result[] | null {
+    const regionLimited = this.regionsNarrowed;
     const merged: Result[] = [];
     const seen: Record<string, true> = {};
     for (const generation of this.generations) {
@@ -105,6 +152,12 @@ export class GenerationFilter {
       if (!species) return null;
       for (const entry of species) {
         if (seen[entry.url]) continue;
+        if (
+          regionLimited &&
+          !this.selectedRegions.has(regionIdFor(speciesId(entry.url), generation.id))
+        ) {
+          continue;
+        }
         seen[entry.url] = true;
         merged.push(entry);
       }

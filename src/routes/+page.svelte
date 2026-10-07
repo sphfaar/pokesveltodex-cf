@@ -32,12 +32,13 @@
     carried ? carried.nextPokeurl : untrack(() => data.nextPokeurl),
   );
 
-  // Every box checked and an empty search keeps the paged national list.
-  // A narrower check, or any search text, replaces it with the full matching
-  // species list in national-dex order.
+  // Every generation checked, no region hiding species, and an empty search
+  // keeps the paged national list. A narrower check, or any search text,
+  // replaces it with the full matching species list in national-dex order.
   let allSelected = $derived(filter.allSelected);
+  let regionsNarrowed = $derived(filter.regionsNarrowed);
   let searching = $derived(filter.query.trim().length > 0);
-  let narrowed = $derived(searching || !allSelected);
+  let narrowed = $derived(searching || !allSelected || regionsNarrowed);
   let filteredList = $derived(filter.filteredList());
   let shownList = $derived(filteredList ?? pokespeciesList);
   let waitingForGenerations = $derived(
