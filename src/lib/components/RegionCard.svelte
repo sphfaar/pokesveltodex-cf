@@ -1,4 +1,5 @@
 <script lang="ts">
+    import { resolve } from "$app/paths";
     import { ChevronsDownUp, ChevronsUpDown } from "@lucide/svelte";
     import browt from "#lib/images/starters/browt.webp";
     import gecqua from "#lib/images/starters/gecqua.webp";
@@ -8,6 +9,7 @@
         gameBackground,
         starterSprite,
         type DexRegion,
+        type RegionStarter,
         type StarterArt,
     } from "#lib/regions.js";
 
@@ -51,16 +53,30 @@
         </div>
         <div class="flex items-center justify-center py-1">
             {#each region.starters as starter (starter.name)}
-                <img
-                    class="size-[4.25rem] object-contain"
-                    src={starterSprite(starter, art)}
-                    alt={starter.name}
-                    width="68"
-                    height="68"
-                    draggable="false"
-                />
+                {#if starter.id != null}
+                    <a
+                        class="inline-flex rounded-sm outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-black"
+                        href={resolve("/pokemon/[slug]", {
+                            slug: starter.name.toLowerCase(),
+                        })}
+                    >
+                        {@render portrait(starter)}
+                    </a>
+                {:else}
+                    {@render portrait(starter)}
+                {/if}
             {/each}
         </div>
+        {#snippet portrait(starter: RegionStarter)}
+            <img
+                class="size-[4.25rem] object-contain"
+                src={starterSprite(starter, art)}
+                alt={starter.name}
+                width="68"
+                height="68"
+                draggable="false"
+            />
+        {/snippet}
         <ul class="flex flex-col gap-1.5">
             {#each region.games as game (game.label)}
                 <li
