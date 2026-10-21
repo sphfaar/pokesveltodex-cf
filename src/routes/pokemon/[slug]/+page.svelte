@@ -5,8 +5,14 @@
   import TcgPrints from "#lib/components/TcgPrints.svelte";
   import missingNo from "#lib/images/missingno.webp";
   import pokeball from "#lib/images/pokeball.svg";
+  import { pokeSpriteUrl } from "#lib/spriteUrl.js";
 
   let { data }: PageProps = $props();
+
+  let favicon = $derived(pokeSpriteUrl(data.poke.mon.sprites.front_default) ?? pokeball);
+  let artwork = $derived(
+    pokeSpriteUrl(data.poke.mon.sprites.other?.["official-artwork"]?.front_default) ?? missingNo,
+  );
 
   let flavorText = $derived.by(() => {
     for (let i = 0; i < data.poke.species.flavor_text_entries.length; i++) {
@@ -21,7 +27,7 @@
   <link
     rel="icon"
     type="image/x-icon"
-    href={data.poke.mon.sprites.front_default}
+    href={favicon}
   />
 </svelte:head>
 
@@ -36,8 +42,7 @@
         width={32}
         height={32}
         class="w-32 h-32 border-2 border-red-600"
-        src={data.poke?.mon?.sprites?.other?.["official-artwork"]
-          ?.front_default ?? missingNo}
+        src={artwork}
         alt="pokemon front img"
       />
       <div

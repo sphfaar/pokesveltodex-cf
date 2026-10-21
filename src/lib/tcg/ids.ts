@@ -125,9 +125,24 @@ export function scrydexImages(setId: string, localId: string): { small: string; 
 	return { small: `${base}/small`, large: `${base}/large` };
 }
 
+const TCGDEX_ASSETS = "https://assets.tcgdex.net";
+
+/** Scan base from the catalogue. Only an https TCGdex asset URL is turned into a file. */
 export function tcgdexImages(image: string | null | undefined): { small: string; large: string } | null {
 	if (!image) return null;
-	return { small: `${image}/low.webp`, large: `${image}/high.webp` };
+	let url: URL;
+	try {
+		url = new URL(image);
+	} catch {
+		return null;
+	}
+	url.username = "";
+	url.password = "";
+	if (url.origin !== TCGDEX_ASSETS || url.search !== "" || url.hash !== "") return null;
+	const path = url.pathname.replace(/\/+$/, "");
+	if (path === "") return null;
+	const base = `${TCGDEX_ASSETS}${path}`;
+	return { small: `${base}/low.webp`, large: `${base}/high.webp` };
 }
 
 export function setIdFromCard(cardId: string, localId: string): string {
